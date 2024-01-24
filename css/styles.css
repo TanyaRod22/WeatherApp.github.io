@@ -107,3 +107,27 @@
     margin-top: 10px;
     display: none;
 }
+@media (max-width: 768px) {
+    .search input {
+        width: 200px;
+        border-radius: 29px;
+    }
+    .search button {
+        width: 45px;
+        height: 41px;
+        border-radius: 21px;
+    }
+    .card {
+        width: 100%;
+        padding: 40px 15px;
+    }
+    .weather-details {
+        padding: 0px;
+    }
+    .col img {
+        width: 56px;
+    }
+    .col p {
+        font-size: 17px;
+    }
+}
