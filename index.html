@@ -90,7 +90,7 @@
 
             function submitPreference(city, temperatureUnit, timestamp) {
                 console.log("Sending preference to backend:", city, temperatureUnit, timestamp);
-                fetch("https://weather-salesforce-backend.onrender.com", {
+                fetch("https://weather-salesforce-backend.onrender.com/submit-preference", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json"
