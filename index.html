@@ -23,7 +23,7 @@
     <div class="card">
         <div class="search">
             <input type="text" class="search-bar" placeholder="Enter City">    
-            <button>
+            <button id="searchBtn" type="button">
                 <img src="images/search.png" alt="search">
             </button>
         </div>
@@ -54,76 +54,108 @@
     </div>
 
     <script>
-        const apiKey = "f10ed85a555165757ad567b1c83e9f25";
-        const apiUrl = "https://api.openweathermap.org/data/2.5/weather?&units=metric&q=";
-        const searchBox = document.querySelector(".search input");
-        const searchBtn = document.querySelector(".search button");
-        const weatherIcon = document.querySelector(".weather-icon");
-    
-        async function checkWeather(city) {
-            try {
-                const response = await fetch(apiUrl + city + `&appid=${apiKey}`);
-                if (response.status === 404) {
-                    document.querySelector(".error").style.display = "block";
-                    document.querySelector(".weather").style.display = "none";
-                } else {
-                    const data = await response.json();
-                    displayWeather(data);
-                }
-            } catch (error) {
-                console.error("Error fetching weather data:", error);
-            }
-        }
-
-        function displayWeather(data) {
-            document.querySelector(".city").innerHTML = data.name;
-            document.querySelector(".temp").innerHTML = Math.round(data.main.temp) + " ℃";
-            document.querySelector(".humidity").innerHTML = data.main.humidity + "%";
-            document.querySelector(".wind").innerHTML = data.wind.speed + "km/h";
-
-            if (data.weather[0].main == "Clouds") {
-                weatherIcon.src = "images/clouds.png";
-            } else if (data.weather[0].main == "Clear") {
-                weatherIcon.src = "images/clear.png";
-            } else if (data.weather[0].main == "Rain") {
-                weatherIcon.src = "images/rain.png";
-            } else if (data.weather[0].main == "Snow") {
-                weatherIcon.src = "images/snow.png";
-            } else if (data.weather[0].main == "Drizzle") {
-                weatherIcon.src = "images/drizzle.png";
-            } else if (data.weather[0].main == "Mist") {
-                weatherIcon.src = "images/mist.png";
-            }
-
-            document.querySelector(".weather").style.display = "block";
-            document.querySelector(".error").style.display = "none";
-        }
-
-        async function getWeatherByLocation() {
-            try {
-                const position = await getCurrentLocation();
-                const { latitude, longitude } = position.coords;
-                const locationResponse = await fetch(
-                    `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&units=metric&appid=${apiKey}`
-                );
-                const locationData = await locationResponse.json();
-                displayWeather(locationData);
-            } catch (error) {
-                console.error("Error fetching location-based weather data:", error);
-            }
-        }
-
-        async function getCurrentLocation() {
-            return new Promise((resolve, reject) => {
-                navigator.geolocation.getCurrentPosition(resolve, reject);
-            });
-        }
-
-        searchBtn.addEventListener("click", () => {
-            checkWeather(searchBox.value);
-        });
-
         document.addEventListener("DOMContentLoaded", () => {
+            console.log("📌 JS Loaded");
+
+            const apiKey = "f10ed85a555165757ad567b1c83e9f25";
+            const apiUrl = "https://api.openweathermap.org/data/2.5/weather?&units=metric&q=";
+            const searchBox = document.querySelector(".search input");
+            const searchBtn = document.getElementById("searchBtn");
+            const weatherIcon = document.querySelector(".weather-icon");
+
+            searchBtn.addEventListener("click", () => {
+                checkWeather(searchBox.value);
+            });
+
+            async function checkWeather(city) {
+                console.log("🔍 checkWeather called with:", city);
+                try {
+                    const response = await fetch(apiUrl + city + `&appid=${apiKey}`);
+                    if (response.status === 404) {
+                        document.querySelector(".error").style.display = "block";
+                        document.querySelector(".weather").style.display = "none";
+                    } else {
+                        const data = await response.json();
+                        displayWeather(data);
+
+                        const temperatureUnit = "C";
+                        const timestamp = new Date().toISOString();
+
+                        submitPreference(data.name, temperatureUnit, timestamp);
+                    }
+                } catch (error) {
+                    console.error("Error fetching weather data:", error);
+                }
+            }
+
+            function submitPreference(city, temperatureUnit, timestamp) {
+                console.log("Sending preference to backend:", city, temperatureUnit, timestamp);
+                fetch("http://localhost:3000/submit-preference", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        city: city,
+                        temperature_unit: temperatureUnit,
+                        timestamp: timestamp
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log("✅ Data sent to Salesforce:", data);
+                    alert("Preference saved to Salesforce!");
+                })
+                .catch(error => {
+                    console.error("❌ Error sending to Salesforce:", error);
+                    alert("Failed to save preference.");
+                });
+            }
+
+            function displayWeather(data) {
+                document.querySelector(".city").innerHTML = data.name;
+                document.querySelector(".temp").innerHTML = Math.round(data.main.temp) + " ℃";
+                document.querySelector(".humidity").innerHTML = data.main.humidity + "%";
+                document.querySelector(".wind").innerHTML = data.wind.speed + "km/h";
+
+                if (data.weather[0].main == "Clouds") {
+                    weatherIcon.src = "images/clouds.png";
+                } else if (data.weather[0].main == "Clear") {
+                    weatherIcon.src = "images/clear.png";
+                } else if (data.weather[0].main == "Rain") {
+                    weatherIcon.src = "images/rain.png";
+                } else if (data.weather[0].main == "Snow") {
+                    weatherIcon.src = "images/snow.png";
+                } else if (data.weather[0].main == "Drizzle") {
+                    weatherIcon.src = "images/drizzle.png";
+                } else if (data.weather[0].main == "Mist") {
+                    weatherIcon.src = "images/mist.png";
+                }
+
+                document.querySelector(".weather").style.display = "block";
+                document.querySelector(".error").style.display = "none";
+            }
+
+            async function getWeatherByLocation() {
+                try {
+                    const position = await getCurrentLocation();
+                    const { latitude, longitude } = position.coords;
+                    const locationResponse = await fetch(
+                        `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&units=metric&appid=${apiKey}`
+                    );
+                    const locationData = await locationResponse.json();
+                    displayWeather(locationData);
+                } catch (error) {
+                    console.error("Error fetching location-based weather data:", error);
+                }
+            }
+
+            async function getCurrentLocation() {
+                return new Promise((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(resolve, reject);
+                });
+            }
+
             if (navigator.geolocation) {
                 if (confirm("Allow this website to access your location?")) {
                     getWeatherByLocation();
